@@ -13,3 +13,4 @@ gst-plugins-base-libs
 gst-plugins-good
 gstreamer
 totem
+https://github.com/deadhead420/archlinux/blob/master/arch-installer.sh
