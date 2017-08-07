@@ -1,0 +1,5 @@
+#!/bin/sh
+
+wget -q --show-progress -c -O /etc/pacman.d/mirrorlist.new https://www.archlinux.org/mirrorlist/all/ 
+cp /etc/pacman.d/mirrorlist.new /etc/pacman.d/mirrorlist
+reflector --verbose -l 50 --sort rate --save /etc/pacman.d/mirrorlist

@@ -1,0 +1,30 @@
+#!/bin/sh
+
+######################################################################
+#
+#  Copyright (c) 2017 revosftw (https://github.com/revosftw)
+#
+#  --> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+#
+######################################################################
+
+
+###############################
+### SET VARIABLES ###
+###############################
+
+pkgname=yaourt
+aur=https://aur.archlinux.org/yaourt.git
+package-query
+###############################
+### FUNCTIONS ###
+###############################
+
+install_aur(){
+	cd /tmp
+	git clone https://aur.archlinux.org/yaourt.git
+	cd yaourt/
+	makepkg -si
+	cd ..
+	rm -rf yaourt
+}
