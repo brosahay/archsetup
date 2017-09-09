@@ -1,14 +1,31 @@
-#!/bin/bash
+#!/bin/sh
+
+######################################################################
+#
+#  Copyright (c) 2017 revosftw (https://github.com/revosftw)
+#
+######################################################################
+
+
+###############################
+### SET VARIABLES ###
+###############################
+
 BRANCH= # Enter a branch if needed, i.e. -340xx or -304xx
 NVIDIA=nvidia${BRANCH} # If no branch entered above this would be "nvidia"
 NOUVEAU=xf86-video-nouveau
 
-# Replace -R with -Rs to if you want to remove the unneeded dependencies
-if [ $(pacman -Qqs ^mesa-libgl$) ]; then
-    pacman -S $NVIDIA ${NVIDIA}-libgl lib32-${NVIDIA}-libgl # Add lib32-${NVIDIA}-libgl and ${NVIDIA}-lts if needed
-    # pacman -R $NOUVEAU
-elif [ $(pacman -Qqs ^${NVIDIA}$) ]; then
-    pacman -S --needed $NOUVEAU mesa-libgl lib32-mesa-libgl # Add lib32-mesa-libgl if needed
-    pacman -Rs $NVIDIA # Add ${NVIDIA}-lts if needed
-fi
+###############################
+### FUNCTIONS ###
+###############################
 
+install_nvidia_drivers(){
+  # Replace -R with -Rs to if you want to remove the unneeded dependencies
+  if [ $(pacman -Qqs ^mesa-libgl$) ]; then
+      pacman -S $NVIDIA ${NVIDIA}-libgl lib32-${NVIDIA}-libgl # Add lib32-${NVIDIA}-libgl and ${NVIDIA}-lts if needed
+      # pacman -R $NOUVEAU
+  elif [ $(pacman -Qqs ^${NVIDIA}$) ]; then
+      pacman -S --needed $NOUVEAU mesa-libgl lib32-mesa-libgl # Add lib32-mesa-libgl if needed
+      pacman -Rs $NVIDIA # Add ${NVIDIA}-lts if needed
+  fi
+}

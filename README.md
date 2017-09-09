@@ -1,1 +1,1 @@
-# archsetup
+# MY ARCHLINUX AUTOMATED SETUP
