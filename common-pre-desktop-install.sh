@@ -1,4 +1,11 @@
 #!/bin/bash
+
+######################################################################
+#
+#  Copyright (c) 2017 revosftw (https://github.com/revosftw)
+#
+######################################################################
+
 nano /etc/locale.gen;locale-gen;echo LANG=en_US.UTF-8 > /etc/locale.conf;
 export LANG=en_US.UTF-8 ln -s /usr/share/zoneinfo/Australia/Adelaide /etc/localtime;
 hwclock --systohc --utc

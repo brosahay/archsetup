@@ -1,5 +1,11 @@
 #!/bin/bash
 
+######################################################################
+#
+#  Copyright (c) 2017 revosftw (https://github.com/revosftw)
+#
+######################################################################
+
 lsblk
 echo -en "\nSelect a partition to use as root (ex: /dev/sdaX): "
 read part

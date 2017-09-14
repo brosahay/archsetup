@@ -1,4 +1,11 @@
 #!/bin/bash
+
+######################################################################
+#
+#  Copyright (c) 2017 revosftw (https://github.com/revosftw)
+#
+######################################################################
+
 pacstrap /mnt firefox budgie-desktop
 clutter-gst
 gst-plugins-bad
