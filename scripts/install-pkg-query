@@ -2,7 +2,7 @@
 
 ######################################################################
 #
-#  Copyright (c) 2017 revosftw (https://github.com/revosftw)
+#  Copyright (c) 2019 revosftw (https://github.com/revosftw)
 #
 ######################################################################
 
@@ -11,8 +11,8 @@
 ### SET VARIABLES ###
 ###############################
 
-pkgname=yaourt
-aur=https://aur.archlinux.org/yaourt.git
+pkgname=package-query
+aur=https://aur.archlinux.org/package-query.git
 
 ###############################
 ### FUNCTIONS ###

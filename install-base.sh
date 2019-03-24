@@ -2,9 +2,10 @@
 
 ######################################################################
 #
-#  Copyright (c) 2017 revosftw (https://github.com/revosftw)
+#  Copyright (c) 2019 revosftw (https://github.com/revosftw)
 #
 ######################################################################
+
 
 lsblk
 echo -en "\nSelect a partition to use as root (ex: /dev/sdaX): "
@@ -79,6 +80,7 @@ arch-chroot /mnt locale-gen
 
 echo -e "\nSet timezone"
 arch-chroot /mnt ln -sf /usr/share/zoneinfo/Asia/Kolkata /etc/localtime
+arch-chroot /mnt hwclock --systohc --utc
 
 echo -en "\nEnter your desired hostname: "
 read hostname
@@ -124,8 +126,8 @@ done
 echo -e "\nEnabling sudo for $username..."
 sed -i '/%wheel ALL=(ALL) ALL/s/^#//' /mnt/etc/sudoers
 
-#echo -e "\nEnabling dhcp..."
-#arch-chroot /mnt systemctl enable dhcpcd
+echo -e "\nEnabling dhcp..."
+arch-chroot /mnt systemctl enable dhcpcd
 
 echo -e "\nInstall complete. Unmount system"
 umount -R /mnt

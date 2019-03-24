@@ -1,0 +1,14 @@
+#!/bin/bash
+
+######################################################################
+#
+#  Copyright (c) 2019 revosftw (https://github.com/revosftw)
+#
+######################################################################
+
+install_budgie_desktop_minimal(){
+  print_title "BUDGIE Minimal - https://wiki.archlinux.org/index.php/Budgie_Desktop"
+    print_info "Budgie is the default desktop of Solus Operating System, written from scratch. Besides a more modern design, Budgie can emulate the look and feel of the GNOME 2 desktop."
+    package_install "budgie-desktop"
+  pause_function
+}

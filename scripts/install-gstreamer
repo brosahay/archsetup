@@ -1,0 +1,14 @@
+#!/bin/bash
+
+######################################################################
+#
+#  Copyright (c) 2019 revosftw (https://github.com/revosftw)
+#
+######################################################################
+
+install_gstreamer(){
+  print_title "GSTREAMER - https://wiki.archlinux.org/index.php/GStreamer"
+  print_info "GStreamer is a pipeline-based multimedia framework written in the C programming language with the type system based on GObject."
+  package_install "gstreamer gst-plugins-base gst-plugins-base-libs"
+  package_install " gst-libav gst-plugins-good gstreamer-vaapi"
+  }

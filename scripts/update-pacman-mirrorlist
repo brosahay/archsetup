@@ -16,12 +16,16 @@ MIRRORLIST=https://www.archlinux.org/mirrorlist/all/
 ###############################
 ### DEPENDENCIES ###
 ###############################
-sudo pacman -S wget reflector
+sudo pacman -S wget reflector --noconfirm
 
 ###############################
 ### FUNCTIONS ###
 ###############################
-
-wget -q --show-progress -c -O /etc/pacman.d/mirrorlist.pacnew $MIRRORLIST
-cp /etc/pacman.d/mirrorlist.pacnew /etc/pacman.d/mirrorlist
-reflector --verbose -l 50 --sort rate --save /etc/pacman.d/mirrorlist
+update_pacman_mirrorlist(){
+  print_title "UPDATE PACMAN MIRRORLIST"
+  print_info "Updating the pacman mirrorlist with better serverlists"
+  package_install "wget"
+  wget -q --show-progress -c -O /etc/pacman.d/mirrorlist.pacnew ${MIRRORLIST}
+  cp /etc/pacman.d/mirrorlist.pacnew /etc/pacman.d/mirrorlist
+  reflector --verbose -l 50 --sort rate --save /etc/pacman.d/mirrorlist
+}

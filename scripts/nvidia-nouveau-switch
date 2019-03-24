@@ -20,6 +20,8 @@ NOUVEAU=xf86-video-nouveau
 ###############################
 
 install_nvidia_drivers(){
+  print_title "NVIDIA DRIVERS"
+  print_info "Installing drivers for NVIDIA"
   # Replace -R with -Rs to if you want to remove the unneeded dependencies
   if [ $(pacman -Qqs ^mesa-libgl$) ]; then
       pacman -S $NVIDIA ${NVIDIA}-libgl lib32-${NVIDIA}-libgl # Add lib32-${NVIDIA}-libgl and ${NVIDIA}-lts if needed
