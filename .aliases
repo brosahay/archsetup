@@ -1,3 +1,7 @@
+#
+# ~/.aliases
+#
+
 #!/usr/bin/env bash
 
 # Detect which `ls` flavor is in use

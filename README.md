@@ -2,7 +2,11 @@
 This a code base for the default programs I need to setup archlinux on my system after a fresh format.
 
 ### Bash Files
-* [bashrc] - main bashrc file to import other modules
-* [bash_profile] - 
-* [bash_prompt] -
-* [bashrc.aliases] -
+* [.bash_profile]       - initiates the loader for rest of the files.
+* [.aliases]            - includes all the aliases commonly used, addional user specific aliases should be added here.
+* [.path]               - includes all the path variables 
+* [.bash_prompt]        -
+* [.exports]            -
+* [.aliases]            -
+* [.functions]          -
+* [.extra]              -

@@ -1,0 +1,34 @@
+#
+# ~/.aliases
+#
+
+export QT_STYLE_OVERRIDE=gtk
+export QT_SELECT=qt5
+
+if [[ $LANG = '' ]]; then
+	export LANG=en_US.UTF-8
+fi
+
+alias pacman='sudo pacman'
+alias pmc='sudo pacman -Sy && pacman -Qu'
+alias pmi='sudo pacman --needed -S'
+alias pmq='pacman -Q'
+alias pmqi='pacman -Qi'
+alias pmql='pacman -Ql'
+alias pmr='sudo pacman -Rs'
+alias pms='pacman -Ss'
+alias pmu='sudo pacman -Sy && sudo pacman -Su'
+
+alias pacu='sudo pacman -Syu --noconfirm'
+alias pacrem='sudo pacman -Rcsn'
+alias pacinfo='pacman -Si'
+alias pacrepo='sudo reflector -l 20 -f 10 --save /etc/pacman.d/mirrorlist'
+
+alias service='sudo systemctl'
+alias grub-update='sudo grub-mkconfig -o /boot/grub/grub.cfg'
+alias journalctl='sudo journalctl'
+alias systemctl='sudo systemctl'
+
+alias yaourt='yay'
+
+alias se='ls /usr/bin | grep'

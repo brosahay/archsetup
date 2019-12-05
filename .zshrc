@@ -1,3 +1,7 @@
+#
+# ~/.zshrc
+#
+
 plugins=(
   git
   bundler
