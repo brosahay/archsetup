@@ -7,7 +7,7 @@
 ######################################################################
 
 if [[ -f `pwd`/scripts/shared_functions ]]; then
-  source /scripts/shared_functions
+  source ./scripts/shared_functions
 else
   echo "missing file: shared_functions"
   exit 1

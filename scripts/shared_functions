@@ -1,21 +1,10 @@
 #!/bin/bash
-#-------------------------------------------------------------------------------
-#Created by helmuthdu mailto: helmuthdu[at]gmail[dot]com
-#Contribution: flexiondotorg
-#-------------------------------------------------------------------------------
-#This program is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+
+################################################################################
 #
-#This program is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+#  Copyright (c) 2019 revosftw (https://github.com/revosftw)
 #
-#You should have received a copy of the GNU General Public License
-#along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#-------------------------------------------------------------------------------
+################################################################################
 
 #GLOBAL VARIABLES {{{
   checklist=( 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 )
@@ -94,19 +83,23 @@
     echo -e "${_msg}"
     exit 1
   } #}}}
+
   cecho() { #{{{
     echo -e "$1"
     echo -e "$1" >>"$LOG"
     tput sgr0;
   } #}}}
+
   ncecho() { #{{{
     echo -ne "$1"
     echo -ne "$1" >>"$LOG"
     tput sgr0
   } #}}}
+
   spinny() { #{{{
     echo -ne "\b${SPIN:i++%${#SPIN}:1}"
   } #}}}
+
   progress() { #{{{
     ncecho "  ";
     while true; do
@@ -130,6 +123,7 @@
       fi
     done
   } #}}}
+
   check_boot_system() { #{{{
     if [[ "$(cat /sys/class/dmi/id/sys_vendor)" == 'Apple Inc.' ]] || [[ "$(cat /sys/class/dmi/id/sys_vendor)" == 'Apple Computer, Inc.' ]]; then
       modprobe -r -q efivars || true  # if MAC
@@ -149,35 +143,42 @@
     fi
   }
   #}}}
+
   check_trim() { #{{{
     [[ -n $(hdparm -I /dev/sda | grep TRIM 2> /dev/null) ]] && TRIM=1
   }
   #}}}
+
   check_root() { #{{{
     if [[ "$(id -u)" != "0" ]]; then
       error_msg "ERROR! You must execute the script as the 'root' user."
     fi
   } #}}}
+
   check_user() { #{{{
     if [[ "$(id -u)" == "0" ]]; then
       error_msg "ERROR! You must execute the script as a normal user."
     fi
   } #}}}
+
   check_archlinux() { #{{{
     if [[ ! -e /etc/arch-release ]]; then
       error_msg "ERROR! You must execute the script on Arch Linux."
     fi
   } #}}}
+
   check_hostname() { #{{{
     if [[ `echo ${HOSTNAME} | sed 's/ //g'` == "" ]]; then
       error_msg "ERROR! Hostname is not configured."
     fi
   } #}}}
+
   check_pacman_blocked() { #{{{
     if [[ -f /var/lib/pacman/db.lck ]]; then
       error_msg "ERROR! Pacman is blocked. \nIf not running remove /var/lib/pacman/db.lck."
     fi
   } #}}}
+
   check_domainname() { #{{{
     local _domainname=`echo ${HOSTNAME} | cut -d'.' -f2- | sed 's/ //g'`
 
@@ -191,6 +192,7 @@
       error_msg "ERROR! Domain name is not configured."
     fi
   } #}}}
+
   check_connection(){ #{{{
     XPINGS=$(( $XPINGS + 1 ))
     connection_test() {
@@ -247,6 +249,7 @@
       [[ $REPLY -ne 5 ]] && check_connection
     fi
   } #}}}
+
   check_vga() { #{{{
     # Determine video chipset - only Intel, ATI and nvidia are supported by this script
     ncecho " ${BBlue}[${Reset}${Bold}X${BBlue}]${Reset} Detecting video chipset "
@@ -291,6 +294,7 @@
       read -p "Type your video driver [ex: sis, fbdev, modesetting]: " VIDEO_DRIVER
     fi
   } #}}}
+
   read_input() { #{{{
     if [[ $AUTOMATIC_MODE -eq 1 ]]; then
       OPTION=$1
@@ -298,6 +302,7 @@
       read -p "$prompt1" OPTION
     fi
   } #}}}
+
   read_input_text() { #{{{
     if [[ $AUTOMATIC_MODE -eq 1 ]]; then
       OPTION=$2
@@ -307,6 +312,7 @@
     fi
     OPTION=`echo "$OPTION" | tr '[:upper:]' '[:lower:]'`
   } #}}}
+
   read_input_options() { #{{{
     local line
     local packages
@@ -327,9 +333,11 @@
     done
     OPTIONS=("${packages[@]}")
   } #}}}
+
   print_line() { #{{{
     printf "%$(tput cols)s\n"|tr ' ' '-'
   } #}}}
+
   print_title() { #{{{
     clear
     print_line
@@ -337,22 +345,27 @@
     print_line
     echo ""
   } #}}}
+
   print_info() { #{{{
     #Console width number
     T_COLS=`tput cols`
     echo -e "${Bold}$1${Reset}\n" | fold -sw $(( $T_COLS - 18 )) | sed 's/^/\t/'
   } #}}}
+
   print_warning() { #{{{
     T_COLS=`tput cols`
     echo -e "${BYellow}$1${Reset}\n" | fold -sw $(( $T_COLS - 1 ))
   } #}}}
+
   print_danger() { #{{{
     T_COLS=`tput cols`
     echo -e "${BRed}$1${Reset}\n" | fold -sw $(( $T_COLS - 1 ))
   } #}}}
+
   start_module() { #{{{
     modprobe $1
   } #}}}
+
   add_module() { #{{{
     for module in $1; do
       #check if the name of the module can be the same of the module or the given name
@@ -362,6 +375,7 @@
       start_module "$module"
     done
   } #}}}
+
   add_repository() { #{{{
     local _repo=${1}
     local _url=${2}
@@ -373,6 +387,7 @@
       system_update
     fi
   } #}}}
+
   check_multilib(){ #{{{
     # this option will avoid any problem with packages install
     if [[ $ARCHI == x86_64 ]]; then
@@ -387,13 +402,16 @@
       fi
     fi
   } #}}}
+
   add_key() { #{{{
     pacman-key -r $1
     pacman-key --lsign-key $1
   } #}}}
+
   add_key_user() { #{{{
     su - ${username} -c "gpg --recv-keys --keyserver $1"
   } #}}}
+
   pacman_key(){ #{{{
     if [[ ! -d /etc/pacman.d/gnupg ]]; then
       print_title "PACMAN KEY - https://wiki.archlinux.org/index.php/pacman-key"
@@ -406,6 +424,7 @@
       package_remove "haveged"
     fi
   } #}}}
+
   add_line() { #{{{
     local _add_line=${1}
     local _filepath=${2}
@@ -413,6 +432,7 @@
     local _has_line=`grep -ci "${_add_line}" ${_filepath} 2>&1`
     [[ $_has_line -eq 0 ]] && echo "${_add_line}" >> ${_filepath}
   } #}}}
+
   replace_line() { #{{{
     local _search=${1}
     local _replace=${2}
@@ -426,6 +446,7 @@
       cecho "failed: ${_search} - ${_filepath}"
     fi
   } #}}}
+
   update_early_modules() { #{{{
     local _new_module=${1}
     local _current_modules=`egrep ^MODULES= /etc/mkinitcpio.conf`
@@ -448,6 +469,7 @@
       fi
     fi
   } #}}}
+
   is_package_installed() { #{{{
     #check if a package is already installed
     for PKG in $1; do
@@ -455,14 +477,17 @@
     done
     return 1
   } #}}}
+
   checkbox() { #{{{
     #display [X] or [ ]
     [[ "$1" -eq 1 ]] && echo -e "${BBlue}[${Reset}${Bold}X${BBlue}]${Reset}" || echo -e "${BBlue}[ ${BBlue}]${Reset}";
   } #}}}
+
   checkbox_package() { #{{{
     #check if [X] or [ ]
     is_package_installed "$1" && checkbox 1 || checkbox 0
   } #}}}
+
   aui_download_packages() { #{{{
     for PKG in $1; do
       #exec command as user instead of root
@@ -477,6 +502,7 @@
       "
     done
   } #}}}
+
   aur_package_install() { #{{{
     su - ${username} -c "sudo -v"
     #install package from aur
@@ -498,6 +524,7 @@
       fi
     done
   } #}}}
+
   package_install() { #{{{
     #install packages using pacman
     if [[ $AUTOMATIC_MODE -eq 1 || $VERBOSE_MODE -eq 0 ]]; then
@@ -529,6 +556,7 @@
       pacman -S --needed ${1}
     fi
   } #}}}
+
   package_remove() { #{{{
     #remove package
     for PKG in ${1}; do
@@ -543,40 +571,48 @@
       fi
     done
   } #}}}
+
   system_update() { #{{{
     pacman -Sy
   } #}}}
+
   npm_install() { #{{{
     #install packages using pacman
     npm install -g $1
   } #}}}
+
   gem_install() { #{{{
     #install packages using pacman
     for PKG in ${1}; do
       sudo -u ${username} gem install -V $PKG
     done
   } #}}}
+
   contains_element() { #{{{
     #check if an element exist in a string
     for e in "${@:2}"; do [[ $e == $1 ]] && break; done;
   } #}}}
+
   config_xinitrc() { #{{{
     #create a xinitrc file in home user directory
     cp -fv /etc/X11/xinit/xinitrc /home/${username}/.xinitrc
     echo -e "exec $1" >> /home/${username}/.xinitrc
     chown -R ${username}:users /home/${username}/.xinitrc
   } #}}}
+
   invalid_option() { #{{{
     print_line
     echo "Invalid option. Try another one."
     pause_function
   } #}}}
+
   pause_function() { #{{{
     print_line
     if [[ $AUTOMATIC_MODE -eq 0 ]]; then
       read -e -sn 1 -p "Press enter to continue..."
     fi
   } #}}}
+
   menu_item() { #{{{
     #check if the number of arguments is less then 2
     [[ $# -lt 2 ]] && _package_name="$1" || _package_name="$2";
@@ -587,6 +623,7 @@
     #display checkbox and package name
     echo -e "$(checkbox_package "$1") ${Bold}${_package_name}${Reset}"
   } #}}}
+
   mainmenu_item() { #{{{
     #if the task is done make sure we get the state
     if [ $1 == 1 -a "$3" != "" ]; then
@@ -594,6 +631,7 @@
     fi
     echo -e "$(checkbox "$1") ${Bold}$2${Reset} ${state}"
   } #}}}
+
   system_ctl() { #{{{
     local _action=${1}
     local _object=${2}
@@ -602,14 +640,17 @@
     pid=$!;progress $pid
   }
   #}}}
+
   arch_chroot() { #{{{
     arch-chroot $MOUNTPOINT /bin/bash -c "${1}"
   }
   #}}}
+
   run_as_user() { #{{{
     sudo -H -u ${username} ${1}
   }
   #}}}
+
   add_user_to_group() { #{{{
     local _user=${1}
     local _group=${2}
@@ -623,6 +664,7 @@
     gpasswd -a ${_user} ${_group} >>"$LOG" 2>&1 &
     pid=$!;progress $pid
   } #}}}
+
   setlocale() { #{{{
     local _locale_list=(`cat /etc/locale.gen | grep UTF-8 | sed 's/\..*$//' | sed '/@/d' | awk '{print $1}' | uniq | sed 's/#//g'`);
     PS3="$prompt1"
@@ -637,6 +679,7 @@
     done
   }
   #}}}
+
   settimezone() { #{{{
     local _zones=(`timedatectl list-timezones | sed 's/\/.*$//' | uniq`)
     PS3="$prompt1"
