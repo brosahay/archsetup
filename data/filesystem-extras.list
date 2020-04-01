@@ -1,0 +1,8 @@
+ntfs-3g
+dosfstools
+exfat-utils
+f2fs-tools
+fuse
+fuse-exfat
+autofs
+mtpfs
