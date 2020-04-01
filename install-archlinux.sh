@@ -43,16 +43,16 @@
     fi
 
   # MOUNTPOINTS
-    EFI_MOUNTPOINT=""
-    ROOT_MOUNTPOINT=""
-    BOOT_MOUNTPOINT=""
-    MOUNTPOINT=""
+    ROOT_MOUNTPOINT="/mnt"
+    EFI_MOUNTPOINT="${ROOT_MOUNTPOINT}/boot/efi"
+    BOOT_MOUNTPOINT="${ROOT_MOUNTPOINT}/boot"
+    VAR_MOUNTPOINT="${ROOT_MOUNTPOINT}/var"
 
   # PARTITIONS
     ROOT_PARTITION=""
     BOOT_PARTITION=""
-    HOME_PARTITION=""
     VAR_PARTITION=""
+    HOME_PARTITION=""
 
   ARCHI=`uname -m` # ARCHITECTURE
   UEFI=0
@@ -229,6 +229,19 @@
     }
 
   # PACKAGE MANAGER
+    pacman_key(){ 
+      if [[ ! -d /etc/pacman.d/gnupg ]]; then
+        print_title "PACMAN KEY - https://wiki.archlinux.org/index.php/pacman-key"
+        print_info "Pacman uses GnuPG keys in a web of trust model to determine if packages are authentic."
+        package_install "haveged"
+        haveged -w 1024
+        pacman-key --init
+        pacman-key --populate archlinux
+        pkill haveged
+        package_remove "haveged"
+      fi
+    }
+    
     is_package_installed() {
       #check if a package is already installed
       for PKG in $1; do
@@ -306,7 +319,21 @@
       done
     }
 
+    aur_package_install_git() {
+      aur_url=$1
+      cd /tmp
+      git clone "${1}" aur_package_git
+      cd aur_package_git
+      makepkg -si
+      cd ..
+      rm -rf aur_package_git
+    }
+
   # CONFIGURE SYSTEM
+    arch_chroot() {
+      arch-chroot $ROOT_MOUNTPOINT /bin/bash -c "${1}"
+    }
+
     config_xinitrc() {
       #create a xinitrc file in home user directory
       cp -fv /etc/X11/xinit/xinitrc /home/${username}/.xinitrc
@@ -326,6 +353,9 @@
           invalid_option
         fi
       done
+      arch_chroot "echo ${LOCALE_UTF8} >> ${ROOT_MOUNTPOINT}/etc/locale.gen"
+      arch_chroot "echo LANG=${LOCALE_UTF8} >> ${ROOT_MOUNTPOINT}/etc/locale.gen"
+      arch_chroot locale-gen
     }
 
     settimezone() {
@@ -349,6 +379,8 @@
           invalid_option
         fi
       done
+      arch-chroot /mnt ln -sf /usr/share/zoneinfo/Asia/Kolkata /etc/localtime
+      arch-chroot /mnt hwclock --systohc --utc
     }
 
     npm_install() {
@@ -362,11 +394,12 @@
         sudo -u ${username} gem install -V $PKG
       done
     }
-
 #}}}
 
 # INSTALLATION FUNCTIONS {{{
   select_partition() {
+    local _partition_info=(`lsblk --list`)
+    ncecho _partition_info
     local _partition_list=(`lsblk --list --output NAME --noheadings`)
     PS3="$prompt1"
     ncecho "Select a partition to use as root (ex: sda1): "
@@ -379,34 +412,217 @@
         invalid_option
       fi
     done
-    echo "${PARTITION}"
+    echo "${_PARTITION}"
+  }
+
+  format_partition() {
+    local _PARTITION=${1}
+    read_input_text "Create new ext4 filesystem on: ${_PARTITION}"
+    case "${OPTION}" in
+      y|Y|yes)
+        mkfs.ext4 ${_PARTITION}
+      ;;
+      n|N|no)
+       ncecho "\nContinuing without creating filesystem."
+      ;;
+      *)
+      	invalid_option
+        format_partition ${_PARTITION}
+      ;;
+    esac
+  }
+
+  mount_partition() {
+    if [[ "${ROOT_PARTITION}" != "" ]]; then
+      print_info "Mounting ROOT_PARTITION (${ROOT_PARTITION}) to ${ROOT_MOUNTPOINT}."
+      mount ${ROOT_PARTITION} ${ROOT_MOUNTPOINT}
+    else
+      print_warning "ROOT_PARTITION not selected"
+      select_partitions
+    fi
+
+    if [[ "${BOOT_PARTITION}" != "" ]]; then
+      print_info "Mounting BOOT_PARTITION (${BOOT_PARTITION}) to ${BOOT_MOUNTPOINT}."
+      mount ${BOOT_PARTITION} ${BOOT_MOUNTPOINT}
+    else
+      print_warning "BOOT_PARTITION not selected"
+      select_partitions
+    fi
+
+    if [[ "${VAR_PARTITION}" != "" ]]; then
+      print_info "Mounting VAR_PARTITION (${VAR_PARTITION}) to ${VAR_MOUNTPOINT}."
+      mount ${VAR_PARTITION} ${VAR_MOUNTPOINT}
+    else
+      print_warning "VAR_PARTITION not selected"
+      select_partitions
+    fi
+
+    if [[ "${HOME_PARTITION}" != "" ]]; then
+      print_info "Mounting HOME_PARTITION (${HOME_PARTITION}) to ${HOME_MOUNTPOINT}."
+      mount ${HOME_PARTITION} ${HOME_MOUNTPOINT}
+    else
+      print_warning "HOME_PARTITION not selected"
+      select_partitions
+    fi
   }
 
   select_partitions() {
     # Select ROOT Partition
     ncecho "Select ROOT Partition"
-    ROOT_PARTITION=$(select_partitions)
+    ROOT_PARTITION=$(select_partition)
     ncecho "ROOT_PARTITION: ${ROOT_PARTITION}"
+    format_partition ${ROOT_PARTITION}
 
-    # Select HOME Partition
-    ncecho "Select HOME Partition"
-    HOME_PARTITION=$(select_partitions)
-    ncecho "HOME_PARTITION: ${HOME_PARTITION}"
+    read_input_text "Do you want seperate BOOT partition"
+    if [[ $OPTION == y ]]; then
+      # Select BOOT Partition
+      ncecho "Select BOOT Partition"
+      BOOT_PARTITION=$(select_partition)
+      ncecho "BOOT_PARTITION: ${BOOT_PARTITION}"
+      format_partition ${BOOT_PARTITION}
+    fi
+    
+    read_input_text "Do you want seperate HOME partition"
+    if [[ $OPTION == y ]]; then
+      # Select HOME Partition
+      ncecho "Select HOME partition"
+      HOME_PARTITION=$(select_partition)
+      ncecho "HOME_PARTITION: ${HOME_PARTITION}"
+      format_partition ${HOME_PARTITION}
+    fi
 
-    # Select VAR Partition
-    ncecho "Select VAR Partition"
-    VAR_PARTITION=$(select_partitions)
-    ncecho "VAR_PARTITION: ${VAR_PARTITION}"
-
-    # Select BOOT Partition
-    ncecho "Select BOOT Partition"
-    BOOT_PARTITION=$(select_partitions)
-    ncecho "BOOT_PARTITION: ${BOOT_PARTITION}"
+    read_input_text "Do you want seperate VAR partition"
+    if [[ $OPTION == y ]]; then
+      # Select VAR Partition
+      ncecho "Select VAR Partition"
+      VAR_PARTITION=$(select_partition)
+      ncecho "VAR_PARTITION: ${VAR_PARTITION}"
+      format_partition ${VAR_PARTITION}
+    fi
   }
 
-  format_partitions() {
-
+  generate_fstab() {
+    print_info "Generating /etc/fstab"
+    genfstab -U -p ${ROOT_MOUNTPOINT} >> "${ROOT_MOUNTPOINT}/etc/fstab"
   }
+
+  set_hostname() {
+    print_title "HOSTNAME"
+    local _hostname
+    ncecho "Enter your desired hostname: "
+    read _hostname
+    echo "$_hostname" > /mnt/etc/hostname
+  }
+
+  install_base() {
+    if [[ "${ROOT_PARTITION}" != "" ]]; then
+      print_title "BASE INSTALL - https://wiki.archlinux.org/index.php/Installation_guide"
+      print_info "ArchLinux install base onto ${ROOT_MOUNTPOINT}"
+      pacstrap ${ROOT_MOUNTPOINT} base linux linux-firmware base-devel dialog wpa_supplicant bash-completion wget dkms net-tools
+      pause_function
+
+      generate_fstab
+      pause_function
+
+      install_grub
+      pause_function
+
+      set_hostname
+      pause_function
+    else
+      print_warning "No ROOT Partition selected"
+    fi
+  }
+
+  install_grub() {
+    print_title "GRUB - https://wiki.archlinux.org/index.php/GRUB"
+    print_info "GRUB (GRand Unified Bootloader) is a multi-boot loader."
+    package_install grub os-prober
+    local _grub_install_location=$(echo ${ROOT_PARTITION} | grep -o "sd.")
+    arch_chroot "grub-install --recheck /dev/$_grub_install_location"
+    arch_chroot "grub-mkconfig -o /boot/grub/grub.cfg"
+    pause_function
+  }
+
+  change_root_passwd() {
+    local password
+    local password_confirm
+    while (true) ; do
+      echo -en "\nEnter a new root password: "
+      read -s password
+      echo
+      echo -en "Confirm root password: "
+      read -s password_confirm
+
+      if [ "$password" != "$password_confirm" ]; then
+        echo -e "\nError: passwords do not match. Try again..."
+      else
+        printf "$password\n$password_confirm" | arch_chroot "passwd & > /dev/null"
+        unset password password_confirm
+        break
+      fi
+    done
+  }
+
+  add_user_to_group() {
+    local _user=${1}
+    local _group=${2}
+
+    if [[ -z ${_group} ]]; then
+      error_msg "ERROR! 'add_user_to_group' was not given enough parameters."
+    fi
+
+    ncecho " ${BBlue}[${Reset}${Bold}X${BBlue}]${Reset} Adding ${Bold}${_user}${Reset} to ${Bold}${_group}${Reset} "
+    groupadd ${_group} >>"$LOG" 2>&1 &
+    gpasswd -a ${_user} ${_group} >>"$LOG" 2>&1 &
+    pid=$!;progress $pid
+  }
+
+  add_user() {
+    local _username=${1}
+    cecho "Enter a new username: "
+    read _username
+    arch_chroot "useradd -m -g users -G adm,wheel,power,audio,video,storage -s /bin/bash $username"
+    add_user_to_sudo _username
+  }
+
+  add_user_to_sudo() {
+    local _username=${1}
+    echo -e "\nEnabling sudo for $_username..."
+    sed -i '/%wheel ALL=(ALL) ALL/s/^#//' ${ROOT_MOUNTPOINT}/etc/sudoers
+  }
+
+   run_as_user() {
+    sudo -H -u ${username} ${1}
+  }
+
+  system_ctl() {
+    local _action=${1}
+    local _object=${2}
+    ncecho " ${BBlue}[${Reset}${Bold}X${BBlue}]${Reset} systemctl ${_action} ${_object} "
+    systemctl ${_action} ${_object} >> "$LOG" 2>&1
+    pid=$!;progress $pid
+  }
+
+  menu_item() { 
+    #check if the number of arguments is less then 2
+    [[ $# -lt 2 ]] && _package_name="$1" || _package_name="$2";
+    #list of chars to remove from the package name
+    local _chars=("Ttf-" "-bzr" "-hg" "-svn" "-git" "-stable" "-icon-theme" "Gnome-shell-theme-" "Gnome-shell-extension-");
+    #remove chars from package name
+    for char in ${_chars[@]}; do _package_name=`echo ${_package_name^} | sed 's/'$char'//'`; done
+    #display checkbox and package name
+    echo -e "$(checkbox_package "$1") ${Bold}${_package_name}${Reset}"
+  }
+
+  mainmenu_item() { 
+    #if the task is done make sure we get the state
+    if [ $1 == 1 -a "$3" != "" ]; then
+      state="${BGreen}[${Reset}$3${BGreen}]${Reset}"
+    fi
+    echo -e "$(checkbox "$1") ${Bold}$2${Reset} ${state}"
+  }
+
 #}}}
 
 ###############################
@@ -417,103 +633,13 @@ function main() {
   print_line
   print_title "Install ArchLinux Menu"
   _option=$(read_input_options _options)
-  echo _options
+  echo _option
 }
 
 while :
   do
     main
   done
-
-echo -en "\nCreate new ext4 filesystem on: $part? [y/n]: "
-read input
-
-case "$input" in
-	y|Y|yes)	mkfs.ext4 /dev/$part
-	;;
-	n|N|no) echo -e "\nContinuing without creating filesystem."
-	;;
-	*)	echo -e "\nError: invalid option. Exiting."
-		exit 1
-	;;
-esac
-
-echo -e "\nMounting $part at mountpoint /mnt"
-mount /dev/$part /mnt
-
-if [ "$?" -gt "0" ]; then
-	echo -e "\nFailed to mount $part. Exiting..."
-	exit 1
-fi
-
-echo -e "\nBegining Arch Linux install to /dev/$part\n"
-pacstrap /mnt base base-devel dialog wpa_supplicant bash-completion wget dkms net-tools grub os-prober
-
-if [ "$?" -gt "0" ]; then
-	echo -e "\nInstall failed. Exiting..."
-	exit 1
-fi
-
-echo -e "\nGenerating fstab..."
-genfstab -U -p /mnt >> /mnt/etc/fstab
-
-grub_part=$(echo "$part" | grep -o "sd.")
-echo -e "\nInstalling grub..."
-arch-chroot /mnt grub-install --recheck /dev/$grub_part
-arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
-
-echo -e "\nSet and generate locale"
-echo "LANG=en_US.UTF-8" > /mnt/etc/locale.conf
-sed -i '/#en_US.UTF-8 UTF-8/s/^#//' /mnt/etc/locale.gen
-arch-chroot /mnt locale-gen
-
-echo -e "\nSet timezone"
-arch-chroot /mnt ln -sf /usr/share/zoneinfo/Asia/Kolkata /etc/localtime
-arch-chroot /mnt hwclock --systohc --utc
-
-echo -en "\nEnter your desired hostname: "
-read hostname
-echo "$hostname" > /mnt/etc/hostname
-
-while (true) ; do
-	echo -en "\nEnter a new root password: "
-	read -s password
-	echo
-	echo -en "Confirm root password: "
-	read -s password_confirm
-
-	if [ "$password" != "$password_confirm" ]; then
-		echo -e "\nError: passwords do not match. Try again..."
-	else
-		printf "$password\n$password_confirm" | arch-chroot /mnt passwd &>/dev/null
-		unset password password_confirm
-		break
-	fi
-done
-
-echo
-echo -en "Enter a new username: "
-read username
-arch-chroot /mnt useradd -m -g users -G wheel,power,audio,video,storage -s /bin/bash "$username"
-
-while (true) ; do
-	echo -en "\nEnter a new password for $username: "
-	read -s password
-	echo
-	echo -en "Confirm $username password: "
-	read -s password_confirm
-
-	if [ "$password" != "$password_confirm" ]; then
-		echo -e "\nError: passwords do not match. Try again..."
-	else
-		printf "$password\n$password_confirm" | arch-chroot /mnt passwd "$username" &>/dev/null
-		unset password password_confirm
-		break
-	fi
-done
-
-echo -e "\nEnabling sudo for $username..."
-sed -i '/%wheel ALL=(ALL) ALL/s/^#//' /mnt/etc/sudoers
 
 echo -e "\nEnabling dhcp..."
 arch-chroot /mnt systemctl enable dhcpcd
