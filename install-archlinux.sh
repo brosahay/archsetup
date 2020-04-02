@@ -398,11 +398,8 @@
 
 # INSTALLATION FUNCTIONS {{{
   select_partition() {
-    local _partition_info=(`lsblk --list`)
-    ncecho _partition_info
     local _partition_list=(`lsblk --list --output NAME --noheadings`)
     PS3="$prompt1"
-    ncecho "Select a partition to use as root (ex: sda1): "
     select _PARTITION in "${_partition_list[@]}"; do
       if contains_element "$_PARTITION" "${_partition_list[@]}"; then
         PARTITION="/dev/${_PARTITION}"
@@ -412,7 +409,7 @@
         invalid_option
       fi
     done
-    echo "${_PARTITION}"
+    echo "${PARTITION}"
   }
 
   format_partition() {
@@ -432,7 +429,7 @@
     esac
   }
 
-  mount_partition() {
+  mount_partitions() {
     if [[ "${ROOT_PARTITION}" != "" ]]; then
       print_info "Mounting ROOT_PARTITION (${ROOT_PARTITION}) to ${ROOT_MOUNTPOINT}."
       mount ${ROOT_PARTITION} ${ROOT_MOUNTPOINT}
@@ -467,36 +464,38 @@
   }
 
   select_partitions() {
+    cecho "Partition List:"
+    lsblk --list
     # Select ROOT Partition
-    ncecho "Select ROOT Partition"
+    cecho "Select ROOT Partition"
     ROOT_PARTITION=$(select_partition)
-    ncecho "ROOT_PARTITION: ${ROOT_PARTITION}"
+    cecho "ROOT_PARTITION: ${ROOT_PARTITION}"
     format_partition ${ROOT_PARTITION}
 
     read_input_text "Do you want seperate BOOT partition"
     if [[ $OPTION == y ]]; then
       # Select BOOT Partition
-      ncecho "Select BOOT Partition"
+      cecho "Select BOOT Partition"
       BOOT_PARTITION=$(select_partition)
-      ncecho "BOOT_PARTITION: ${BOOT_PARTITION}"
+      cecho "BOOT_PARTITION: ${BOOT_PARTITION}"
       format_partition ${BOOT_PARTITION}
     fi
     
     read_input_text "Do you want seperate HOME partition"
     if [[ $OPTION == y ]]; then
       # Select HOME Partition
-      ncecho "Select HOME partition"
+      cecho "Select HOME partition"
       HOME_PARTITION=$(select_partition)
-      ncecho "HOME_PARTITION: ${HOME_PARTITION}"
+      cecho "HOME_PARTITION: ${HOME_PARTITION}"
       format_partition ${HOME_PARTITION}
     fi
 
     read_input_text "Do you want seperate VAR partition"
     if [[ $OPTION == y ]]; then
       # Select VAR Partition
-      ncecho "Select VAR Partition"
+      cecho "Select VAR Partition"
       VAR_PARTITION=$(select_partition)
-      ncecho "VAR_PARTITION: ${VAR_PARTITION}"
+      cecho "VAR_PARTITION: ${VAR_PARTITION}"
       format_partition ${VAR_PARTITION}
     fi
   }
@@ -628,13 +627,86 @@
 ###############################
 ### DRIVER FUNCTION ###
 ###############################
-function main() {
-  local _options=("select_partitions" "format_partitions" "install_base" "install_desktop" "install_aur" "install_bootloader" "quit")
-  print_line
-  print_title "Install ArchLinux Menu"
-  _option=$(read_input_options _options)
-  echo _option
+
+function echo_message(){
+	local color=$1;
+	local message=$2;
+	if ! [[ $color =~ '^[0-9]$' ]] ; then
+		case $(echo -e $color | tr '[:upper:]' '[:lower:]') in
+			# black
+			header) color=0 ;;
+			# red
+			error) color=1 ;;
+			# green
+			success) color=2 ;;
+			# yellow
+			welcome) color=3 ;;
+			# blue
+			title) color=4 ;;
+			# purple
+			info) color=5 ;;
+			# cyan
+			question) color=6 ;;
+			# orange
+			warning) color=202 ;;
+			# white
+			*) color=7 ;;
+		esac
+	fi
+	tput bold;
+	tput setaf $color;
+	echo '-- '$message;
+	tput sgr0;
 }
+
+# tab width
+tabs 4
+clear
+
+# Title of script set
+TITLE="ArchLinux Install Script"
+
+# Main
+function main {
+	cecho "Starting 'main' function"
+	# Draw window
+	MAIN=$(eval `resize` && whiptail \
+		--notags \
+		--title "$TITLE" \
+		--menu "\nWhat would you like to do?" \
+		--cancel-button "Quit" \
+		$LINES $COLUMNS $(( $LINES - 12 )) \
+		'select_partitions'           'Select Partitions' \
+		'mount_partitions'            'Mount Partitions' \
+		'install_base'                'Install base system' \
+		'install_desktop'             'Install desktop' \
+		'install_aur'                 'Install AUR packages' \
+		'install_bootloader'          'Install bootloader' \
+		3>&1 1>&2 2>&3)
+	# check exit status
+	if [ $? = 0 ]; then
+		cecho "Starting '$MAIN' function"
+		$MAIN
+	else
+		# Quit
+		quit
+	fi
+}
+
+# Quit
+function quit {
+	cecho "Starting 'quit' function"
+	cecho "Exiting $TITLE..."
+	# Draw window
+	if (whiptail --title "Quit" --yesno "Are you sure you want quit?" 8 56) then
+		cecho 'Thanks for using!'
+		exit 99
+	else
+		main
+	fi
+}
+
+cecho "$TITLE"
 
 while :
   do
